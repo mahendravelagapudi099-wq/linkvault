@@ -11,7 +11,7 @@
 <meta name="mobile-web-app-capable" content="yes" />
 <meta name="apple-mobile-web-app-capable" content="yes" />
 <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent" />
-<link rel="apple-touch-icon" href="icon-192.png" />
+<link rel="apple-touch-icon" href="icons/icon-192.png" />
 <link rel="icon" href="data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'><text y='.9em' font-size='90'>🗝️</text></svg>" />
 </head>
 <body>
@@ -75,6 +75,13 @@
     </label>
     <div class="modal-actions">
       <button id="saveSettings" class="btn primary">Save settings</button>
+    </div>
+    <h3 style="margin:1.2em 0 .4em">Backup</h3>
+    <p class="hint" style="margin:.2em 0 .8em">Export your vault as a JSON file, or restore from a backup. API keys are not included.</p>
+    <div class="modal-actions">
+      <button id="exportBtn" class="btn">⬇️ Export backup</button>
+      <button id="importBtn" class="btn">⬆️ Import backup</button>
+      <input type="file" id="importFile" accept="application/json,.json" hidden />
     </div>
   </div>
 </div>
