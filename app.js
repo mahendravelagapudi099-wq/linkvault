@@ -58,10 +58,7 @@ const ANALYSIS_PROMPT = (url, meta, searchCtx) => `Analyze this web link and ret
 {
   "summary": "2-3 sentence summary of what the page is about",
   "category": "exactly one of: ${CATEGORIES.join(', ')}",
-  "tags": ["5-8 lowercase keyword tags"],
-  "technologies": ["frameworks, tools, languages or platforms mentioned or relevant"],
-  "useCases": ["3-5 bullets: what this is useful for"],
-  "related": [{"name": "resource name", "url": "https://…", "why": "one line on why it's related"}]  // 3-5 items
+  "tags": ["5-8 lowercase keyword tags"]
 }
 URL: ${url}
 Title: ${meta.title || 'n/a'}
@@ -138,9 +135,6 @@ async function addLink() {
         summary: analysis.summary || '',
         category: CATEGORIES.includes(analysis.category) ? analysis.category : 'Other',
         tags: Array.isArray(analysis.tags) ? analysis.tags.map(String) : [],
-        technologies: Array.isArray(analysis.technologies) ? analysis.technologies.map(String) : [],
-        useCases: Array.isArray(analysis.useCases) ? analysis.useCases.map(String) : [],
-        related: Array.isArray(analysis.related) ? analysis.related : [],
       };
       entry.status = 'done';
     }
@@ -172,9 +166,6 @@ async function reanalyze(id) {
       summary: analysis.summary || '',
       category: CATEGORIES.includes(analysis.category) ? analysis.category : 'Other',
       tags: Array.isArray(analysis.tags) ? analysis.tags.map(String) : [],
-      technologies: Array.isArray(analysis.technologies) ? analysis.technologies.map(String) : [],
-      useCases: Array.isArray(analysis.useCases) ? analysis.useCases.map(String) : [],
-      related: Array.isArray(analysis.related) ? analysis.related : [],
     };
     entry.status = 'done';
   } catch (e) { entry.status = 'error'; entry.error = e.message; }
@@ -191,6 +182,75 @@ function deleteLink(id) {
   saveLinks(links); render(); closeModals();
 }
 window.deleteLink = deleteLink;
+
+/* ---------- backup: export / import ---------- */
+function exportVault() {
+  const payload = JSON.stringify(
+    { app: 'linkvault', version: 1, exportedAt: new Date().toISOString(), links },
+    null, 2
+  );
+  const filename = 'linkvault-backup-' + new Date().toISOString().slice(0, 10) + '.json';
+  // Android app: hand the file to the native bridge (saves to Downloads)
+  try {
+    if (window.AndroidBridge && typeof window.AndroidBridge.exportVault === 'function') {
+      window.AndroidBridge.exportVault(filename, payload);
+      setStatus('<span class="ok">✅ Backup sent — check your Downloads.</span>');
+      return;
+    }
+  } catch (e) { /* fall through to browser download */ }
+  // Browser fallback: blob download
+  try {
+    const blob = new Blob([payload], { type: 'application/json' });
+    const a = document.createElement('a');
+    a.href = URL.createObjectURL(blob);
+    a.download = filename;
+    document.body.appendChild(a);
+    a.click();
+    setTimeout(() => { URL.revokeObjectURL(a.href); a.remove(); }, 800);
+    setStatus('<span class="ok">✅ Backup downloaded.</span>');
+  } catch (e) {
+    setStatus('<span class="err">⚠️ Export failed in this browser.</span>');
+  }
+}
+
+function importVault(file) {
+  const reader = new FileReader();
+  reader.onload = () => {
+    try {
+      const data = JSON.parse(reader.result);
+      const incoming = Array.isArray(data) ? data : data.links;
+      if (!Array.isArray(incoming)) throw new Error('not a linkvault backup');
+      const seen = new Set(links.map((l) => l.url));
+      let added = 0;
+      for (const item of incoming) {
+        if (!item || !item.url || seen.has(item.url)) continue;
+        seen.add(item.url);
+        links.push({
+          id: item.id || ('l' + Date.now().toString(36) + Math.random().toString(36).slice(2, 7)),
+          url: String(item.url),
+          addedAt: item.addedAt || new Date().toISOString(),
+          status: item.analysis ? 'done' : 'metadata-only',
+          title: item.title || item.url,
+          favicon: item.favicon || '',
+          meta: item.meta || {},
+          analysis: item.analysis ? {
+            summary: String(item.analysis.summary || ''),
+            category: CATEGORIES.includes(item.analysis.category) ? item.analysis.category : 'Other',
+            tags: Array.isArray(item.analysis.tags) ? item.analysis.tags.map(String) : [],
+          } : null,
+          error: null,
+        });
+        added++;
+      }
+      saveLinks(links); render(); closeModals();
+      setStatus('<span class="ok">✅ Imported ' + added + ' link' + (added === 1 ? '' : 's') + '.</span>');
+    } catch (e) {
+      setStatus('<span class="err">⚠️ That file is not a valid LinkVault backup.</span>');
+    }
+  };
+  reader.onerror = () => setStatus('<span class="err">⚠️ Could not read that file.</span>');
+  reader.readAsText(file);
+}
 
 /* ---------- relationships ---------- */
 function relatedLinks(entry) {
@@ -220,7 +280,7 @@ function render() {
   const filtered = links.filter((l) => {
     if (cat && l.analysis?.category !== cat) return false;
     if (!q) return true;
-    const hay = [l.title, l.url, l.analysis?.summary, l.analysis?.category, ...(l.analysis?.tags || []), ...(l.analysis?.technologies || [])]
+    const hay = [l.title, l.url, l.analysis?.summary, l.analysis?.category, ...(l.analysis?.tags || [])]
       .join(' ').toLowerCase();
     return hay.includes(q);
   });
@@ -267,10 +327,6 @@ function openReport(id) {
     <span class="url">${esc(l.url)}</span>
     <div class="badges"><span class="badge cat">${esc(a.category)}</span>${badgeList(a.tags)}</div>
     <section><h4>Summary</h4><p>${esc(a.summary)}</p></section>
-    ${a.technologies?.length ? `<section><h4>Technologies</h4><div class="badges">${badgeList(a.technologies)}</div></section>` : ''}
-    ${a.useCases?.length ? `<section><h4>Use cases</h4><ul>${a.useCases.map((u) => `<li>${esc(u)}</li>`).join('')}</ul></section>` : ''}
-    ${a.related?.length ? `<section><h4>Related resources</h4><ul class="rel">${a.related.map((r) =>
-      `<li><a href="${esc(r.url || '#')}" target="_blank" rel="noopener">${esc(r.name || r.url)}</a><div class="why">${esc(r.why || '')}</div></li>`).join('')}</ul></section>` : ''}
     ${rel.length ? `<section><h4>Related in your vault</h4><ul class="rel">${rel.map((r) =>
       `<li><a href="#" onclick="openReport('${r.id}');return false;">${esc(r.title || r.url)}</a><div class="why">${esc(r.analysis.category)} · ${esc((r.analysis.tags || []).slice(0, 3).join(', '))}</div></li>`).join('')}</ul></section>` : ''}
     <div class="report-actions">
@@ -296,6 +352,12 @@ $('urlInput').addEventListener('keydown', (e) => { if (e.key === 'Enter') addLin
 $('searchInput').addEventListener('input', render);
 $('categoryFilter').addEventListener('change', render);
 $('settingsBtn').addEventListener('click', openSettings);
+$('exportBtn').addEventListener('click', exportVault);
+$('importBtn').addEventListener('click', () => $('importFile').click());
+$('importFile').addEventListener('change', (e) => {
+  if (e.target.files && e.target.files[0]) importVault(e.target.files[0]);
+  e.target.value = '';
+});
 $('saveSettings').addEventListener('click', () => {
   settings = {
     geminiKey: $('geminiKey').value.trim(),
