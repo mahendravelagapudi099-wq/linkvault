@@ -314,3 +314,29 @@ if (!settings.geminiKey) {
   setStatus('👋 Add your Gemini API key in <b>⚙️ Settings</b> to enable AI analysis.');
 }
 render();
+
+/* ---------- PWA: service worker + share target ---------- */
+if ('serviceWorker' in navigator) {
+  window.addEventListener('load', () => {
+    navigator.serviceWorker.register('sw.js').catch(() => {});
+  });
+}
+
+// Handle links shared from other apps (Web Share Target: ?url= / ?text=)
+(function handleSharedLink() {
+  const params = new URLSearchParams(location.search);
+  const raw = params.get('url') || params.get('text') || '';
+  if (!raw) return;
+  history.replaceState({}, '', location.pathname);
+  const m = raw.match(/https?:\/\/[^\s]+/i);
+  const candidate = m ? m[0] : raw;
+  try {
+    normalizeUrl(candidate);
+    $('urlInput').value = candidate;
+    setStatus('<span class="ok">📥 Shared link received — analyzing…</span>');
+    addLink();
+  } catch {
+    $('urlInput').value = raw;
+    setStatus('<span class="err">⚠️ The shared text isn\'t a valid URL — edit it above and retry.</span>');
+  }
+})();
