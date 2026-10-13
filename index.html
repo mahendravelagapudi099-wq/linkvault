@@ -1,0 +1,78 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1.0" />
+<title>LinkVault — AI-powered link manager</title>
+<meta name="description" content="Paste any URL and get an AI-generated report: summary, category, tags, technologies, use cases and related resources." />
+<link rel="stylesheet" href="styles.css" />
+<link rel="icon" href="data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'><text y='.9em' font-size='90'>🗝️</text></svg>" />
+</head>
+<body>
+<header class="topbar">
+  <div class="brand">
+    <span class="logo">🗝️</span>
+    <div>
+      <h1>LinkVault</h1>
+      <p>AI-powered link manager</p>
+    </div>
+  </div>
+  <button id="settingsBtn" class="btn ghost" aria-label="Settings">⚙️ Settings</button>
+</header>
+
+<main>
+  <section class="add-card">
+    <div class="add-row">
+      <input id="urlInput" type="url" placeholder="Paste any URL — e.g. https://example.com/article" autocomplete="off" spellcheck="false" />
+      <button id="addBtn" class="btn primary">Analyze &amp; Save</button>
+    </div>
+    <div id="status" class="status" aria-live="polite"></div>
+  </section>
+
+  <section class="toolbar">
+    <input id="searchInput" type="search" placeholder="🔍 Search your vault…" autocomplete="off" />
+    <select id="categoryFilter" aria-label="Filter by category">
+      <option value="">All categories</option>
+    </select>
+    <span id="count" class="count"></span>
+  </section>
+
+  <section id="library" class="library"></section>
+
+  <p class="hint">🔒 Everything is stored locally in your browser. API keys never leave your device except to call the services directly.</p>
+</main>
+
+<div id="reportModal" class="modal" hidden>
+  <div class="modal-card">
+    <button class="modal-close" data-close aria-label="Close">✕</button>
+    <div id="reportBody"></div>
+  </div>
+</div>
+
+<div id="settingsModal" class="modal" hidden>
+  <div class="modal-card narrow">
+    <button class="modal-close" data-close aria-label="Close">✕</button>
+    <h2>⚙️ Settings</h2>
+    <label class="field">
+      <span>Gemini API key <em>(required for AI analysis)</em></span>
+      <input id="geminiKey" type="password" placeholder="AIza…" autocomplete="off" />
+      <small>Get one free at <a href="https://aistudio.google.com/app/apikey" target="_blank" rel="noopener">Google AI Studio</a>. Stored only in this browser.</small>
+    </label>
+    <label class="field">
+      <span>Gemini model</span>
+      <input id="geminiModel" type="text" placeholder="gemini-2.5-flash" autocomplete="off" />
+    </label>
+    <label class="field">
+      <span>Tavily API key <em>(optional — enriches analysis with live web search)</em></span>
+      <input id="tavilyKey" type="password" placeholder="tvly-…" autocomplete="off" />
+      <small>Free tier at <a href="https://tavily.com" target="_blank" rel="noopener">tavily.com</a>. Skipped if empty.</small>
+    </label>
+    <div class="modal-actions">
+      <button id="saveSettings" class="btn primary">Save settings</button>
+    </div>
+  </div>
+</div>
+
+<script src="app.js"></script>
+</body>
+</html>
