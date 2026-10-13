@@ -13,6 +13,14 @@ An AI-powered link manager. Paste any URL and LinkVault:
 
 The app is deployed with GitHub Pages: **https://mahendravelagapudi099-wq.github.io/linkvault/**
 
+## Install as a mobile app
+
+LinkVault is a PWA — no app store needed:
+
+- **Android (Chrome):** open the site → menu ⋮ → **Add to Home screen** (or **Install app**). It runs fullscreen, works offline, and appears in your app drawer.
+- **Share links into it:** after installing, LinkVault shows up in Android's share sheet — share any link from your browser or apps straight into your vault.
+- **iPhone (Safari):** open the site → Share → **Add to Home Screen**.
+
 ## Setup
 
 1. Open the app and click **⚙️ Settings**.
