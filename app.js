@@ -3,7 +3,7 @@
 
 const LS_LINKS = 'linkvault.links.v1';
 const LS_SETTINGS = 'linkvault.settings.v1';
-const DEFAULT_MODEL = 'gemini-2.5-flash';
+const DEFAULT_MODEL = 'gemini-3.5-flash-lite';
 const CATEGORIES = ['Development', 'AI/ML', 'Design', 'DevOps', 'Data', 'Security', 'Mobile', 'Web', 'Productivity', 'Learning', 'News', 'Other'];
 
 const $ = (id) => document.getElementById(id);
@@ -15,7 +15,12 @@ function loadLinks() {
 }
 function saveLinks(links) { localStorage.setItem(LS_LINKS, JSON.stringify(links)); }
 function loadSettings() {
-  try { return Object.assign({ geminiKey: '', tavilyKey: '', model: DEFAULT_MODEL }, JSON.parse(localStorage.getItem(LS_SETTINGS)) || {}); }
+  try {
+    const s = Object.assign({ geminiKey: '', tavilyKey: '', model: DEFAULT_MODEL }, JSON.parse(localStorage.getItem(LS_SETTINGS)) || {});
+    // Migrate off the retired default: Google now recommends gemini-3.5-flash-lite / gemini-3.8-flash
+    if (s.model === 'gemini-2.5-flash') s.model = DEFAULT_MODEL;
+    return s;
+  }
   catch { return { geminiKey: '', tavilyKey: '', model: DEFAULT_MODEL }; }
 }
 function saveSettings(s) { localStorage.setItem(LS_SETTINGS, JSON.stringify(s)); }
